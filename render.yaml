@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: pulse-diagnosis-api
+    rootDir: backend
+    env: python
+    plan: free
+    region: singapore
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: MODEL_VERSION
+        value: 1.0.0
+      - key: PULSE_API_DEBUG
+        value: false
+      - key: RATE_LIMIT_DEFAULT
+        value: "200 per day;50 per hour"
+      - key: RATE_LIMIT_PREDICT
+        value: "30 per minute"
+      - key: MAX_CONTENT_LENGTH
+        value: 16384
+      - key: CORS_ORIGINS
+        value: "*"

@@ -1,0 +1,24 @@
+{
+  "algorithm": "RandomForestClassifier",
+  "training_accuracy": 0.9799426934097422,
+  "feature_names": [
+    "mean",
+    "std",
+    "variance",
+    "min",
+    "max",
+    "energy"
+  ],
+  "model_version": "1.0.0",
+  "training_date": "2026-07-02T11:03:59.645793+00:00",
+  "best_params": {
+    "classifier__max_depth": null,
+    "classifier__min_samples_leaf": 1,
+    "classifier__min_samples_split": 2,
+    "classifier__n_estimators": 80
+  },
+  "cross_validation_accuracy_mean": 0.9787465131461808,
+  "cross_validation_accuracy_std": 0.0032587869112817767,
+  "label_source": "bootstrap:IsolationForest",
+  "training_rows": 1741
+}
