@@ -1,13 +1,28 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
 # Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-.venv/
-venv/
-env/
-ENV/
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+*.pyc
+
+# Runtime
+backend/logs/
+backend/*.db
+backend/*.sqlite
+backend/*.sqlite3
+
+# Environment
+backend/.env
+.env
+
+# Android
+app/build/
+.gradle/
 
 # Runtime files
 logs/*.log
@@ -29,3 +44,9 @@ Thumbs.db
 !models/scaler.pkl
 !models/model_metadata.json
 !models/metrics.json
+
+# Keep production model artifacts
+!trained_models/model.pkl
+!trained_models/scaler.pkl
+!trained_models/metadata.json
+!trained_models/metrics.json

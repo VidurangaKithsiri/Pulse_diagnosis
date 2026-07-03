@@ -9,12 +9,15 @@ from flask_limiter.errors import RateLimitExceeded
 from flask_limiter.util import get_remote_address
 from werkzeug.exceptions import RequestEntityTooLarge
 
+from src.api.routes import create_api_blueprint
 from src.config import Config, ensure_directories
-from src.database import DatabaseError, PredictionDatabase
-from src.logger import get_logger
-from src.predictor import PulsePredictor
-from src.routes import create_routes
-from src.utils import ValidationError
+from src.database import DatabaseError, PredictionRepository
+from src.logging import get_logger
+from src.middleware import register_security_headers
+from src.ml import ModelLoader
+from src.services import PredictionService
+from src.utils import error_response
+from src.validators import ValidationError
 
 
 def create_app(config: Config = Config()) -> Flask:
@@ -27,6 +30,7 @@ def create_app(config: Config = Config()) -> Flask:
     origins = "*" if config.cors_origins == "*" else [item.strip() for item in config.cors_origins.split(",")]
     CORS(app, resources={r"/*": {"origins": origins}})
     Swagger(app)
+    register_security_headers(app)
 
     limiter = Limiter(
         key_func=get_remote_address,
@@ -35,41 +39,40 @@ def create_app(config: Config = Config()) -> Flask:
     )
     limiter.init_app(app)
 
-    predictor = PulsePredictor(config)
-    database = PredictionDatabase(config)
-    blueprint = create_routes(predictor, database, config)
-    blueprint.view_functions["predict"] = limiter.limit(config.rate_limit_predict)(blueprint.view_functions["predict"])
-    app.register_blueprint(blueprint)
+    model_loader = ModelLoader(config)
+    prediction_service = PredictionService(model_loader, config)
+    repository = PredictionRepository(config)
+    app.register_blueprint(create_api_blueprint(prediction_service, model_loader, repository, config, limiter))
 
     @app.errorhandler(404)
     def not_found(error):  # type: ignore[no-untyped-def]
-        return jsonify({"error": "not_found", "message": "Invalid endpoint."}), 404
+        return error_response("not_found", "Invalid endpoint.", 404)
 
     @app.errorhandler(405)
     def method_not_allowed(error):  # type: ignore[no-untyped-def]
-        return jsonify({"error": "method_not_allowed", "message": "HTTP method is not allowed."}), 405
+        return error_response("method_not_allowed", "HTTP method is not allowed.", 405)
 
     @app.errorhandler(ValidationError)
     def validation_error(error):  # type: ignore[no-untyped-def]
-        return jsonify({"error": "invalid_request", "message": str(error)}), 400
+        return error_response("invalid_request", str(error), 400)
 
     @app.errorhandler(RequestEntityTooLarge)
     def request_too_large(error):  # type: ignore[no-untyped-def]
-        return jsonify({"error": "request_too_large", "message": "Request body is too large."}), 413
+        return error_response("request_too_large", "Request body is too large.", 413)
 
     @app.errorhandler(RateLimitExceeded)
     def rate_limited(error):  # type: ignore[no-untyped-def]
-        return jsonify({"error": "rate_limit_exceeded", "message": str(error.description)}), 429
+        return error_response("rate_limit_exceeded", str(error.description), 429)
 
     @app.errorhandler(DatabaseError)
     def database_error(error):  # type: ignore[no-untyped-def]
-        logger.exception("Database error")
-        return jsonify({"error": "database_failure", "message": str(error)}), 500
+        logger.exception("database_error")
+        return error_response("database_failure", str(error), 500)
 
     @app.errorhandler(Exception)
     def unhandled(error):  # type: ignore[no-untyped-def]
-        logger.exception("Unhandled server error")
-        return jsonify({"error": "internal_server_error", "message": "Unexpected server error."}), 500
+        logger.exception("unhandled_error")
+        return error_response("internal_server_error", "Unexpected server error.", 500)
 
-    logger.info("Application startup complete on port %s", config.api_port)
+    logger.info("startup_complete port=%s environment=%s", config.api_port, config.environment)
     return app

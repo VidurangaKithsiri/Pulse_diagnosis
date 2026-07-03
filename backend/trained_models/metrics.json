@@ -1,0 +1,68 @@
+{
+  "accuracy": 0.9799426934097422,
+  "precision": 0.92,
+  "recall": 0.8214285714285714,
+  "f1_score": 0.8679245283018868,
+  "auc": 0.9967734757454383,
+  "classification_report": {
+    "Normal": {
+      "precision": 0.9845679012345679,
+      "recall": 0.9937694704049844,
+      "f1-score": 0.9891472868217054,
+      "support": 321.0
+    },
+    "Abnormal": {
+      "precision": 0.92,
+      "recall": 0.8214285714285714,
+      "f1-score": 0.8679245283018868,
+      "support": 28.0
+    },
+    "accuracy": 0.9799426934097422,
+    "macro avg": {
+      "precision": 0.952283950617284,
+      "recall": 0.9075990209167779,
+      "f1-score": 0.928535907561796,
+      "support": 349.0
+    },
+    "weighted avg": {
+      "precision": 0.979387668470763,
+      "recall": 0.9799426934097422,
+      "f1-score": 0.9794216786883102,
+      "support": 349.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      319,
+      2
+    ],
+    [
+      5,
+      23
+    ]
+  ],
+  "metadata": {
+    "algorithm": "RandomForestClassifier",
+    "training_accuracy": 0.9799426934097422,
+    "feature_names": [
+      "mean",
+      "std",
+      "variance",
+      "min",
+      "max",
+      "energy"
+    ],
+    "model_version": "1.0.0",
+    "training_date": "2026-07-02T11:03:59.645793+00:00",
+    "best_params": {
+      "classifier__max_depth": null,
+      "classifier__min_samples_leaf": 1,
+      "classifier__min_samples_split": 2,
+      "classifier__n_estimators": 80
+    },
+    "cross_validation_accuracy_mean": 0.9787465131461808,
+    "cross_validation_accuracy_std": 0.0032587869112817767,
+    "label_source": "bootstrap:IsolationForest",
+    "training_rows": 1741
+  }
+}

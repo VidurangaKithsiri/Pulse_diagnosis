@@ -30,3 +30,9 @@ backend/venv/
 !backend/models/scaler.pkl
 !backend/models/model_metadata.json
 !backend/models/metrics.json
+
+# Keep backend production model artifacts
+!backend/trained_models/model.pkl
+!backend/trained_models/scaler.pkl
+!backend/trained_models/metadata.json
+!backend/trained_models/metrics.json

@@ -1,4 +1,4 @@
-"""Compatibility logging module."""
+"""Logging exports."""
 from src.logging.structured_logger import get_logger
 
 __all__ = ["get_logger"]

@@ -1,191 +1,118 @@
-# Pulse Diagnosis Prediction API
+# Pulse Diagnosis Prediction Backend
 
-Production-ready Flask backend for the Pulse Diagnosis Prediction System. The API trains a traditional machine-learning model, loads the model once at startup, predicts Normal/Abnormal pulse status, stores prediction history in SQLite, and is ready for Render deployment.
+Production-ready Flask backend for the Final Year Research Project: **Designing an ML-Based Wearable Pulse Monitoring and Disease Prediction System with Android Application and Cloud Backend**.
 
-## Project Structure
+## Architecture
 
 ```text
 backend/
   app.py
-  train.py
+  wsgi.py
   requirements.txt
   runtime.txt
-  render.yaml
   Procfile
-  dataset/pulse_features.csv
-  models/model.pkl
-  models/scaler.pkl
+  render.yaml
+  .env.example
+  README.md
   src/
-    api.py
-    config.py
-    database.py
-    evaluation.py
-    feature_extractor.py
-    logger.py
-    predictor.py
-    preprocess.py
-    routes.py
-    trainer.py
-    utils.py
+    api/            Flask app factory and routes
+    services/       Prediction business logic
+    ml/             Model loading and artifact management
+    models/         Domain model package
+    database/       SQLite repository layer
+    utils/          JSON and response helpers
+    middleware/     Security headers
+    config/         Environment-driven settings
+    validators/     Request validation and feature ordering
+    logging/        Structured logging
+  trained_models/
+    model.pkl
+    scaler.pkl
+    metadata.json
+    metrics.json
+  datasets/
+  logs/
   tests/
+  docs/
 ```
 
-## Local Setup
+## Local Installation
 
 ```powershell
-cd C:\Users\Sulo\Documents\Codex\2026-07-02\act-as-a-senior-ai-engineer-2\PulseDiagnosis\backend
+cd backend
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -r requirements.txt
-python train.py
 python app.py
 ```
 
-Local API: <http://127.0.0.1:5000>
-Swagger UI: <http://127.0.0.1:5000/apidocs/>
+## Required Model Artifacts
 
-## API Endpoints
-
-### GET /health
-
-Healthy response after model training:
-
-```json
-{
-  "status": "healthy",
-  "model_loaded": true,
-  "database": "connected",
-  "version": "1.0.0"
-}
-```
-
-If model files are missing, the service still starts and returns `model_loaded: false`. Run `python train.py` locally, or let Render run it during the build step.
-
-### POST /predict
-
-```json
-{
-  "mean": 72.5,
-  "std": 4.2,
-  "variance": 17.6,
-  "min": 63,
-  "max": 82,
-  "energy": 5200
-}
-```
-
-Response:
-
-```json
-{
-  "prediction": "Normal",
-  "confidence": 0.9821,
-  "risk_level": "Low",
-  "prediction_probability": {
-    "Normal": 0.9821,
-    "Abnormal": 0.0179
-  }
-}
-```
-
-Other endpoints:
-
-- `GET /history`
-- `DELETE /history`
-- `GET /model-info`
-- Versioned aliases: `/api/v1/predict`, `/api/v1/history`, `/api/v1/model-info`, `/api/v1/health`
-
-## Model Artifacts for Option 2
-
-This deployment expects trained model artifacts to be committed to GitHub. Before deploying, run:
-
-```powershell
-cd C:\Users\Sulo\Documents\Codex\2026-07-02\act-as-a-senior-ai-engineer-2\PulseDiagnosis\backend
-python train.py
-dir models
-```
-
-Confirm these files exist:
+The backend loads these files at startup:
 
 ```text
-models/model.pkl
-models/scaler.pkl
-models/model_metadata.json
-models/metrics.json
+trained_models/model.pkl
+trained_models/scaler.pkl
+trained_models/metadata.json
 ```
 
-Then commit them with the backend. The included `.gitignore` allows these model files to be tracked.
+The legacy `models/` folder can remain, but production loading uses `trained_models/` by default.
+
+## API
+
+- `GET /`
+- `GET /health`
+- `GET /version`
+- `POST /predict`
+- `GET /metrics`
+- `GET /docs`
+- `GET /swagger`
+- `GET /history`
+- `DELETE /history`
+
+Android aliases are preserved:
+
+- `POST /api/v1/predict`
+- `GET /api/v1/health`
+- `GET /api/v1/history`
+- `GET /api/v1/model-info`
+
+## Prediction Input
+
+The feature order is always fixed:
+
+```text
+mean, std, variance, min, max, energy
+```
 
 ## Render Deployment
 
-### 1. Push to GitHub
+Use the repository root `PulseDiagnosis/render.yaml` if the Android project is the GitHub root. It points Render to `backend`.
 
-From the project root:
-
-```powershell
-git init
-git add .
-git commit -m "Prepare Pulse Diagnosis API for Render"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPOSITORY.git
-git push -u origin main
-```
-
-### 2. Connect Render
-
-1. Open <https://dashboard.render.com>.
-2. Choose **New +**.
-3. Choose **Blueprint** if using `render.yaml`, or **Web Service** for manual setup.
-4. Connect the GitHub repository.
-5. Select the backend directory if Render asks for the root directory: `PulseDiagnosis/backend`.
-
-### 3. Render Settings
-
-The included `render.yaml` defines:
-
-- Environment: Python
-- Runtime: Python 3.12.8
-- Build command: installs dependencies only. Train locally and commit `models/model.pkl` plus `models/scaler.pkl` before deploying.
-- Start command: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120`
-- Health check path: `/health`
-- Auto deploy: enabled
-
-Manual setup values:
+Manual Render settings:
 
 ```text
+Root Directory: backend
 Build Command: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
-Start Command: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
+Start Command: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120
 Health Check Path: /health
 ```
 
-## Updating Deployment
+## Environment Variables
 
-```powershell
-git add .
-git commit -m "Update backend"
-git push
+See `.env.example`. Important values include `PORT`, `MODEL_PATH`, `SCALER_PATH`, `DATABASE_PATH`, `CORS_ORIGINS`, and `RATE_LIMIT_PREDICT`.
+
+## Android Integration
+
+Use the deployed URL:
+
+```java
+private static final String PREDICTION_URL =
+        "https://YOUR-RENDER-SERVICE.onrender.com/api/v1/predict";
 ```
 
-Render auto deploys after the push if auto deploy is enabled.
-
-## View Logs and Restart
-
-1. Open the Render service.
-2. Go to **Logs** to view startup, prediction, and error logs.
-3. Use **Manual Deploy > Clear build cache & deploy** if dependencies change.
-4. Use **Restart service** for a quick restart.
-
-## Security and Production Behavior
-
-- Gunicorn is used in production.
-- Flask `app.run()` is used only for local development.
-- `PORT` is read from Render environment variables.
-- Model and scaler paths are relative to the backend root by default.
-- CORS is enabled and configurable with `CORS_ORIGINS`.
-- Flask-Limiter protects prediction traffic.
-- Request body size is limited with `MAX_CONTENT_LENGTH`.
-- SQLite tables are created automatically during startup.
+The response still includes `prediction`, `confidence`, `risk_level`, and `prediction_probability` for the existing Android screen.
 
 ## Testing
 
@@ -193,6 +120,8 @@ Render auto deploys after the push if auto deploy is enabled.
 pytest
 ```
 
-## Repository Root Note
+## Troubleshooting
 
-If your GitHub repository root is `PulseDiagnosis`, use the root-level `render.yaml` at `PulseDiagnosis/render.yaml`. It sets `rootDir: backend` automatically. If you deploy only the backend folder as the repository root, use `backend/render.yaml`.
+- If `/health` shows `model_loaded: false`, confirm `trained_models/model.pkl` and `trained_models/scaler.pkl` are committed.
+- If Android cannot connect to local Flask from an emulator, use `http://10.0.2.2:5000/api/v1/predict`.
+- If Render starts but prediction fails, check Render logs for `model_load_failed`.
