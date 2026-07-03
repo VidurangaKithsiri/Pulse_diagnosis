@@ -13,3 +13,20 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Python backend
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+backend/logs/*.log
+backend/.pytest_cache/
+backend/.venv/
+backend/venv/
+
+# Keep trained model artifacts for Render option 2
+!backend/models/model.pkl
+!backend/models/scaler.pkl
+!backend/models/model_metadata.json
+!backend/models/metrics.json
